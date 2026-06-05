@@ -34,6 +34,8 @@ import {
     Rocket,
     LogOut,
     ChevronsUpDown,
+    Crown,
+    History,
 } from 'lucide-react';
 
 const navigation = [
@@ -41,6 +43,16 @@ const navigation = [
         title: 'Mission Control',
         url: '/dashboard/mission-control',
         icon: LayoutDashboard,
+    },
+    {
+        title: 'Play Chess',
+        url: '/dashboard/chess',
+        icon: Crown,
+    },
+    {
+        title: 'Game History',
+        url: '/dashboard/games',
+        icon: History,
     },
     {
         title: 'Chat with Jarvis',
