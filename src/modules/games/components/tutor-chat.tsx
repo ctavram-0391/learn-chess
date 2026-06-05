@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { StockfishEngine } from '../hooks/useStockfish';
+import { Side } from '../types';
 
 interface TutorChatProps {
     fen: string;
     history: string[];
+    humanColor: Side;
     engine: StockfishEngine;
     /** Reports the engine's best move so the board can draw it as an arrow. */
     onBestMove?: (move: { from: string; to: string } | null) => void;
@@ -39,20 +41,20 @@ const BEST_MOVE_PROMPT =
     'What is the best move for me here, and why is it strong? Explain the idea in simple terms a ' +
     'beginner can follow.';
 
-export function TutorChat({ fen, history, engine, onBestMove }: TutorChatProps) {
+export function TutorChat({ fen, history, humanColor, engine, onBestMove }: TutorChatProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const idRef = useRef(1);
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
-    const isWhiteToMove = useMemo(() => {
+    const isHumanTurn = useMemo(() => {
         try {
-            return new Chess(fen).turn() === 'w';
+            return new Chess(fen).turn() === (humanColor === 'white' ? 'w' : 'b');
         } catch {
             return false;
         }
-    }, [fen]);
+    }, [fen, humanColor]);
 
     const pushMessage = (role: ChatMessage['role'], content: string) => {
         setMessages((prev) => [...prev, { id: idRef.current++, role, content }]);
@@ -148,8 +150,8 @@ export function TutorChat({ fen, history, engine, onBestMove }: TutorChatProps) 
                     size="sm"
                     className="flex-1"
                     onClick={handleBestMove}
-                    disabled={loading || !isWhiteToMove}
-                    title={!isWhiteToMove ? 'Wait for your turn' : undefined}
+                    disabled={loading || !isHumanTurn}
+                    title={!isHumanTurn ? 'Wait for your turn' : undefined}
                 >
                     <Sparkles className="size-4" />
                     Best move

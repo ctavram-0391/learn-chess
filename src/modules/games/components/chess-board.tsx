@@ -18,23 +18,29 @@ import {
 import { Loader2 } from 'lucide-react';
 import { StockfishEngine } from '../hooks/useStockfish';
 import { useSaveGame } from '../hooks/useGames';
-import { Difficulty, GameResult } from '../types';
+import { Difficulty, GameResult, Side } from '../types';
 
 interface ChessBoardProps {
     difficulty: Difficulty;
+    /** Which colour the human plays; the engine plays the other colour. */
+    humanColor: Side;
     /** Shared Stockfish engine (lifted to the page so the tutor can use it too). */
     engine: StockfishEngine;
     /** Optional move to draw as an arrow (e.g. the tutor's "best move" suggestion). */
     highlightMove?: { from: string; to: string } | null;
     /** Reports the live position (FEN) + SAN move history up to the parent (for the tutor). */
     onPositionChange?: (fen: string, history: string[]) => void;
+    /** Called when the player requests a new game (e.g. to reopen the setup dialog). */
+    onNewGame?: () => void;
 }
 
 export function ChessBoard({
     difficulty,
+    humanColor,
     engine,
     highlightMove,
     onPositionChange,
+    onNewGame,
 }: ChessBoardProps) {
     const gameRef = useRef(new Chess());
     const [fen, setFen] = useState(DEFAULT_POSITION);
@@ -42,6 +48,10 @@ export function ChessBoard({
     const [moveFrom, setMoveFrom] = useState<string | null>(null);
     const [endResult, setEndResult] = useState<GameResult | null>(null);
     const savedRef = useRef(false);
+    const openedRef = useRef(false);
+
+    // 'w' or 'b' for the human's colour (chess.js uses single letters).
+    const me: 'w' | 'b' = humanColor === 'white' ? 'w' : 'b';
 
     const { ready, getBestMove } = engine;
     const saveGame = useSaveGame();
@@ -61,8 +71,8 @@ export function ChessBoard({
 
         let result: GameResult;
         if (game.isCheckmate()) {
-            // The side to move has been checkmated. Human is White.
-            result = game.turn() === 'w' ? 'loss' : 'win';
+            // The side to move has been checkmated; if that's the human, they lost.
+            result = game.turn() === me ? 'loss' : 'win';
         } else {
             result = 'draw'; // stalemate, threefold, insufficient material, 50-move
         }
@@ -79,7 +89,7 @@ export function ChessBoard({
             });
         }
         return true;
-    }, [difficulty, saveGame]);
+    }, [difficulty, saveGame, me]);
 
     const makeEngineMove = useCallback(async () => {
         const game = gameRef.current;
@@ -108,7 +118,7 @@ export function ChessBoard({
     const tryHumanMove = useCallback(
         (from: string, to: string): boolean => {
             const game = gameRef.current;
-            if (thinking || game.isGameOver() || game.turn() !== 'w') return false;
+            if (thinking || game.isGameOver() || game.turn() !== me) return false;
 
             let move;
             try {
@@ -126,18 +136,18 @@ export function ChessBoard({
             }
             return true;
         },
-        [thinking, notifyPosition, persistIfOver, makeEngineMove],
+        [thinking, notifyPosition, persistIfOver, makeEngineMove, me],
     );
 
     // Show legal-move hints while a piece is being dragged.
     const onPieceDrag = useCallback(
         ({ square }: { square: string | null }) => {
             const game = gameRef.current;
-            if (thinking || game.isGameOver() || game.turn() !== 'w' || !square) return;
+            if (thinking || game.isGameOver() || game.turn() !== me || !square) return;
             const piece = game.get(square as Square);
-            if (piece && piece.color === 'w') setMoveFrom(square);
+            if (piece && piece.color === me) setMoveFrom(square);
         },
-        [thinking],
+        [thinking, me],
     );
 
     // Drag-to-move (react-chessboard pointer drag)
@@ -154,11 +164,11 @@ export function ChessBoard({
     const onSquareClick = useCallback(
         ({ square }: { square: string }) => {
             const game = gameRef.current;
-            if (thinking || game.isGameOver() || game.turn() !== 'w') return;
+            if (thinking || game.isGameOver() || game.turn() !== me) return;
 
             if (!moveFrom) {
                 const piece = game.get(square as Square);
-                if (piece && piece.color === 'w') setMoveFrom(square);
+                if (piece && piece.color === me) setMoveFrom(square);
                 return;
             }
 
@@ -171,23 +181,60 @@ export function ChessBoard({
             if (!applied) {
                 // Clicking another of your pieces re-selects it; otherwise clear.
                 const piece = game.get(square as Square);
-                setMoveFrom(piece && piece.color === 'w' ? square : null);
+                setMoveFrom(piece && piece.color === me ? square : null);
             } else {
                 setMoveFrom(null);
             }
         },
-        [moveFrom, thinking, tryHumanMove],
+        [moveFrom, thinking, tryHumanMove, me],
     );
 
     const newGame = useCallback(() => {
         gameRef.current = new Chess();
         savedRef.current = false;
+        openedRef.current = false;
         setFen(gameRef.current.fen());
         setThinking(false);
         setMoveFrom(null);
         setEndResult(null);
         notifyPosition();
     }, [notifyPosition]);
+
+    // Keep a stable ref to the latest engine-move fn so the opening-move effect
+    // below depends only on [ready, me] and never cancels itself when
+    // makeEngineMove's identity changes across renders.
+    const makeEngineMoveRef = useRef(makeEngineMove);
+    useEffect(() => {
+        makeEngineMoveRef.current = makeEngineMove;
+    }, [makeEngineMove]);
+
+    // If the human plays Black, the engine (White) makes the opening move.
+    // The guard is set inside the timer (not the effect body) so React Strict
+    // Mode's mount→unmount→mount can't trip it before the real run, and the
+    // deferral keeps engine setState out of the synchronous effect body.
+    useEffect(() => {
+        if (!ready) return;
+        const game = gameRef.current;
+        if (game.history().length !== 0 || game.isGameOver() || game.turn() === me) {
+            return;
+        }
+        const timer = setTimeout(() => {
+            if (openedRef.current) return;
+            const g = gameRef.current;
+            if (g.history().length === 0 && !g.isGameOver() && g.turn() !== me) {
+                openedRef.current = true;
+                void makeEngineMoveRef.current();
+            }
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [ready, me]);
+
+    // New games go through the parent (to reopen the setup dialog); fall back to a local reset.
+    const handleNewGame = useCallback(() => {
+        setEndResult(null);
+        if (onNewGame) onNewGame();
+        else newGame();
+    }, [onNewGame, newGame]);
 
     const END_COPY: Record<GameResult, { title: string; description: string }> = {
         win: {
@@ -210,14 +257,14 @@ export function ChessBoard({
     const isOver = view.isGameOver();
     const statusText = isOver
         ? view.isCheckmate()
-            ? view.turn() === 'w'
+            ? view.turn() === me
                 ? 'Checkmate — you lost'
                 : 'Checkmate — you won!'
             : 'Game over — draw'
-        : view.turn() === 'w'
+        : view.turn() === me
             ? view.inCheck()
                 ? 'Your move — you are in check'
-                : 'Your move (White)'
+                : 'Your move'
             : 'Stockfish is replying…';
 
     // Highlight the selected/held piece and dot its legal destinations.
@@ -242,7 +289,7 @@ export function ChessBoard({
                     <span className="text-sm font-medium">{statusText}</span>
                     {thinking && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
                 </div>
-                <Button variant="outline" size="sm" onClick={newGame}>
+                <Button variant="outline" size="sm" onClick={handleNewGame}>
                     New Game
                 </Button>
             </div>
@@ -252,7 +299,7 @@ export function ChessBoard({
                     options={{
                         id: 'learn-chess-board',
                         position: fen,
-                        boardOrientation: 'white',
+                        boardOrientation: humanColor,
                         allowDragging: ready && !thinking && !isOver,
                         onPieceDrag,
                         onPieceDrop,
@@ -278,7 +325,7 @@ export function ChessBoard({
             )}
             <div className="flex justify-center">
                 <Badge variant="secondary" className="capitalize">
-                    Difficulty: {difficulty}
+                    {humanColor} · {difficulty}
                 </Badge>
             </div>
 
@@ -299,7 +346,7 @@ export function ChessBoard({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Review board</AlertDialogCancel>
-                        <AlertDialogAction onClick={newGame}>New Game</AlertDialogAction>
+                        <AlertDialogAction onClick={handleNewGame}>New Game</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
