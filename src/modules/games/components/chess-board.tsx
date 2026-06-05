@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Chess, DEFAULT_POSITION, type Square } from 'chess.js';
+import { Chess, type Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,10 +28,25 @@ interface ChessBoardProps {
     engine: StockfishEngine;
     /** Optional move to draw as an arrow (e.g. the tutor's "best move" suggestion). */
     highlightMove?: { from: string; to: string } | null;
-    /** Reports the live position (FEN) + SAN move history up to the parent (for the tutor). */
-    onPositionChange?: (fen: string, history: string[]) => void;
+    /** Movetext to resume from on mount (e.g. a persisted game); '' starts fresh. */
+    initialPgn?: string;
+    /** Reports the live position (FEN) + SAN move history + PGN up to the parent. */
+    onPositionChange?: (fen: string, history: string[], pgn: string) => void;
     /** Called when the player requests a new game (e.g. to reopen the setup dialog). */
     onNewGame?: () => void;
+}
+
+/** Build a Chess instance, resuming from PGN when one is provided. */
+function createGame(pgn?: string): Chess {
+    const game = new Chess();
+    if (pgn) {
+        try {
+            game.loadPgn(pgn);
+        } catch {
+            // Corrupt/incompatible PGN — fall back to a fresh game.
+        }
+    }
+    return game;
 }
 
 export function ChessBoard({
@@ -39,11 +54,15 @@ export function ChessBoard({
     humanColor,
     engine,
     highlightMove,
+    initialPgn,
     onPositionChange,
     onNewGame,
 }: ChessBoardProps) {
-    const gameRef = useRef(new Chess());
-    const [fen, setFen] = useState(DEFAULT_POSITION);
+    // Lazily resume from the persisted PGN once, at mount. New games remount this
+    // component (via a changing key), so this initializer runs fresh each time.
+    const [initialGame] = useState(() => createGame(initialPgn));
+    const gameRef = useRef(initialGame);
+    const [fen, setFen] = useState(() => initialGame.fen());
     const [thinking, setThinking] = useState(false);
     const [moveFrom, setMoveFrom] = useState<string | null>(null);
     const [endResult, setEndResult] = useState<GameResult | null>(null);
@@ -57,7 +76,7 @@ export function ChessBoard({
     const saveGame = useSaveGame();
 
     const notifyPosition = useCallback(() => {
-        onPositionChange?.(gameRef.current.fen(), gameRef.current.history());
+        onPositionChange?.(gameRef.current.fen(), gameRef.current.history(), gameRef.current.pgn());
     }, [onPositionChange]);
 
     // Report the starting position once mounted.

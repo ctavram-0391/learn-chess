@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-    Rocket,
     LogOut,
     ChevronsUpDown,
     Crown,
@@ -78,11 +77,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             <SidebarMenuButton size="lg" asChild>
                                 <Link href="/">
                                     <div className={`flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity ${state === 'collapsed' ? 'group-hover/header:opacity-0' : ''}`}>
-                                        <Rocket className="size-4" />
+                                        <Crown className="size-4" />
                                     </div>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">Jarvis</span>
-                                        <span className="truncate text-xs">Personal Assistant</span>
+                                        <span className="truncate font-semibold">Learn Chess</span>
+                                        <span className="truncate text-xs">AI chess tutor</span>
                                     </div>
                                 </Link>
                             </SidebarMenuButton>

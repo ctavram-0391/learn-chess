@@ -7,7 +7,7 @@ export interface AuthConfig {
 }
 
 export const authConfig: AuthConfig = {
-    defaultRedirectPath: '/dashboard',
+    defaultRedirectPath: '/dashboard/chess',
     defaultUnauthorizedPath: '/unauthorized',
     protectedPaths: [
         '/dashboard**',

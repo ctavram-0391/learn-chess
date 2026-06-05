@@ -1,30 +1,28 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Lightbulb, Sparkles, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { StockfishEngine } from '../hooks/useStockfish';
-import { Side } from '../types';
+import { ChatMessage, Side } from '../types';
 
 interface TutorChatProps {
     fen: string;
     history: string[];
     humanColor: Side;
     engine: StockfishEngine;
+    /** Conversation state, owned by the page so it can be persisted across reloads. */
+    messages: ChatMessage[];
+    onMessagesChange: Dispatch<SetStateAction<ChatMessage[]>>;
     /** Reports the engine's best move so the board can draw it as an arrow. */
     onBestMove?: (move: { from: string; to: string } | null) => void;
 }
 
-interface ChatMessage {
-    id: number;
-    role: 'user' | 'assistant';
-    content: string;
-}
-
-const WELCOME: ChatMessage = {
+/** Opening message shown at the start of every new conversation. */
+export const WELCOME_MESSAGE: ChatMessage = {
     id: 0,
     role: 'assistant',
     content:
@@ -41,11 +39,17 @@ const BEST_MOVE_PROMPT =
     'What is the best move for me here, and why is it strong? Explain the idea in simple terms a ' +
     'beginner can follow.';
 
-export function TutorChat({ fen, history, humanColor, engine, onBestMove }: TutorChatProps) {
-    const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
+export function TutorChat({
+    fen,
+    history,
+    humanColor,
+    engine,
+    messages,
+    onMessagesChange,
+    onBestMove,
+}: TutorChatProps) {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const idRef = useRef(1);
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
     const isHumanTurn = useMemo(() => {
@@ -57,7 +61,10 @@ export function TutorChat({ fen, history, humanColor, engine, onBestMove }: Tuto
     }, [fen, humanColor]);
 
     const pushMessage = (role: ChatMessage['role'], content: string) => {
-        setMessages((prev) => [...prev, { id: idRef.current++, role, content }]);
+        onMessagesChange((prev) => {
+            const nextId = prev.length ? Math.max(...prev.map((m) => m.id)) + 1 : 1;
+            return [...prev, { id: nextId, role, content }];
+        });
         // Scroll to the bottom on the next tick.
         requestAnimationFrame(() => {
             bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });

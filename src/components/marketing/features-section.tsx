@@ -1,95 +1,74 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Lock,
-    Database,
-    Palette,
-    Code2,
-    Zap,
-    Shield,
-    Smartphone,
-    Globe,
-    Workflow
-} from "lucide-react";
+import { Bot, Cpu, History, Compass, Gauge, MessageSquare } from "lucide-react";
 
 const features = [
     {
-        icon: Lock,
-        title: "Complete Authentication",
-        description: "Login, signup, password reset, and session management with Supabase Auth. Ready out of the box."
+        icon: Bot,
+        title: "AI chess tutor",
+        description:
+            "Ask for the best move, get a position analyzed, or see the idea behind any move — explained in plain language as you play.",
     },
     {
-        icon: Database,
-        title: "Database & Real-time",
-        description: "PostgreSQL with real-time subscriptions, Row Level Security, and version-controlled migrations."
+        icon: Cpu,
+        title: "Play Stockfish",
+        description:
+            "Face one of the strongest engines in the world. Dial the strength up or down so every game is a fair fight.",
     },
     {
-        icon: Workflow,
-        title: "Background Jobs",
-        description: "Durable workflows, queues, and scheduled tasks with Inngest. Automatic retries and step functions."
+        icon: Compass,
+        title: "On-board guidance",
+        description:
+            "The tutor draws arrows right on the board to show threats, plans, and the move it would play in your shoes.",
     },
     {
-        icon: Code2,
-        title: "End-to-End Type Safety",
-        description: "TypeScript strict mode throughout, Zod validation, and fully typed API responses."
+        icon: History,
+        title: "Game history & review",
+        description:
+            "Every game is saved. Step back through your moves to find the turning points and learn from your mistakes.",
     },
     {
-        icon: Zap,
-        title: "Performance Optimized",
-        description: "React Query caching, optimistic updates, Turbopack dev server, and automatic code splitting."
+        icon: Gauge,
+        title: "Pick your difficulty",
+        description:
+            "Choose your side and the engine's level before each game, from gentle practice to a serious challenge.",
     },
     {
-        icon: Palette,
-        title: "Beautiful UI Components",
-        description: "40+ accessible components from shadcn/ui built with Radix UI and Tailwind CSS v4."
+        icon: MessageSquare,
+        title: "Move-by-move tracking",
+        description:
+            "A live move tracker keeps the full game in view so you always know where you are and what just happened.",
     },
-    {
-        icon: Shield,
-        title: "Production Ready",
-        description: "Vercel Analytics, error boundaries, comprehensive testing setup, and security best practices."
-    },
-    {
-        icon: Smartphone,
-        title: "Mobile First Design",
-        description: "Fully responsive design that works beautifully on all devices from mobile to desktop."
-    },
-    {
-        icon: Globe,
-        title: "SEO Optimized",
-        description: "Dynamic metadata, automatic sitemaps, Open Graph images, and Core Web Vitals optimization."
-    }
 ];
 
 export function FeaturesSection() {
     return (
-        <section id="features" className="container mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24">
-            <div className="text-center mb-10 sm:mb-12 lg:mb-16">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-4">
-                    Everything you need to launch
-                </h2>
-                <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                    Skip months of setup and configuration. Focus on building your unique features while we handle the foundation.
-                </p>
-            </div>
+        <section id="features" className="border-t border-border bg-muted/30">
+            <div className="container mx-auto max-w-7xl px-4 py-16 sm:py-24">
+                <div className="mx-auto max-w-2xl text-center">
+                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                        Everything you need to get better
+                    </h2>
+                    <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+                        A practice partner, a coach, and a review tool in one place — built to
+                        turn every game into a lesson.
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {features.map((feature) => {
-                    const IconComponent = feature.icon;
-                    return (
-                        <Card key={feature.title} className="h-full border-border/50">
-                            <CardHeader className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                                        <IconComponent className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <CardTitle className="text-base font-semibold">{feature.title}</CardTitle>
-                                </div>
-                                <CardDescription className="text-sm leading-relaxed">
+                <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {features.map((feature) => (
+                        <Card key={feature.title} className="border-border/60 transition-colors hover:border-border">
+                            <CardHeader>
+                                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                                    <feature.icon className="h-5 w-5" />
+                                </span>
+                                <CardTitle className="mt-4 text-lg">{feature.title}</CardTitle>
+                                <CardDescription className="leading-relaxed">
                                     {feature.description}
                                 </CardDescription>
                             </CardHeader>
                         </Card>
-                    );
-                })}
+                    ))}
+                </div>
             </div>
         </section>
     );

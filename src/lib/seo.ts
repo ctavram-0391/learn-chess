@@ -5,12 +5,12 @@ import { env } from './env';
  * Site configuration - centralized SEO settings
  */
 export const siteConfig = {
-    name: env.NEXT_PUBLIC_SITE_NAME || 'Next Launch TS',
-    description: env.NEXT_PUBLIC_SITE_DESCRIPTION || 'Build something awesome 💪 - The ultimate Next.js starter for modern SaaS applications',
+    name: env.NEXT_PUBLIC_SITE_NAME || 'Learn Chess',
+    description: env.NEXT_PUBLIC_SITE_DESCRIPTION || 'Learn chess with an AI tutor — play Stockfish, get move-by-move coaching, and review every game.',
     url: env.NEXT_PUBLIC_SITE_URL,
     ogImage: '/og-image.png',
-    twitterCreator: '@nextlaunchts',
-    keywords: ['Next.js', 'React', 'TypeScript', 'SaaS', 'Starter', 'Supabase', 'Tailwind CSS'],
+    twitterCreator: '@learnchess',
+    keywords: ['chess', 'learn chess', 'chess tutor', 'chess AI', 'Stockfish', 'chess coach', 'play chess online'],
 };
 
 /**
@@ -118,12 +118,14 @@ export const pageMetadata = {
     }),
 
     login: generateMetadata({
-        title: 'Sign In',
-        description: 'Sign in to your account to access all features',
+        title: 'Log In',
+        description: 'Log in to keep learning chess, play Stockfish, and review your games.',
+        noIndex: true,
     }),
 
     signup: generateMetadata({
         title: 'Sign Up',
-        description: 'Create your account and start building something awesome',
+        description: 'Create your free account and start learning chess with an AI tutor.',
+        noIndex: true,
     }),
 } as const;
