@@ -2,6 +2,9 @@ export type GameResult = 'win' | 'loss' | 'draw';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+/** Which colour the human plays. */
+export type Side = 'white' | 'black';
+
 export interface Game {
     id: string;
     user_id: string;
