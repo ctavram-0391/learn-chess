@@ -16,17 +16,26 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
-import { useStockfish } from '../hooks/useStockfish';
+import { StockfishEngine } from '../hooks/useStockfish';
 import { useSaveGame } from '../hooks/useGames';
 import { Difficulty, GameResult } from '../types';
 
 interface ChessBoardProps {
     difficulty: Difficulty;
+    /** Shared Stockfish engine (lifted to the page so the tutor can use it too). */
+    engine: StockfishEngine;
+    /** Optional move to draw as an arrow (e.g. the tutor's "best move" suggestion). */
+    highlightMove?: { from: string; to: string } | null;
     /** Reports the live position (FEN) + SAN move history up to the parent (for the tutor). */
     onPositionChange?: (fen: string, history: string[]) => void;
 }
 
-export function ChessBoard({ difficulty, onPositionChange }: ChessBoardProps) {
+export function ChessBoard({
+    difficulty,
+    engine,
+    highlightMove,
+    onPositionChange,
+}: ChessBoardProps) {
     const gameRef = useRef(new Chess());
     const [fen, setFen] = useState(DEFAULT_POSITION);
     const [thinking, setThinking] = useState(false);
@@ -34,7 +43,7 @@ export function ChessBoard({ difficulty, onPositionChange }: ChessBoardProps) {
     const [endResult, setEndResult] = useState<GameResult | null>(null);
     const savedRef = useRef(false);
 
-    const { ready, getBestMove } = useStockfish();
+    const { ready, getBestMove } = engine;
     const saveGame = useSaveGame();
 
     const notifyPosition = useCallback(() => {
@@ -249,6 +258,15 @@ export function ChessBoard({ difficulty, onPositionChange }: ChessBoardProps) {
                         onPieceDrop,
                         onSquareClick,
                         squareStyles,
+                        arrows: highlightMove
+                            ? [
+                                  {
+                                      startSquare: highlightMove.from,
+                                      endSquare: highlightMove.to,
+                                      color: 'rgba(21, 128, 61, 0.75)',
+                                  },
+                              ]
+                            : [],
                     }}
                 />
             </div>
