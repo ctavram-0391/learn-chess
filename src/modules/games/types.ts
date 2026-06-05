@@ -21,3 +21,10 @@ export interface CreateGameData {
     difficulty: Difficulty;
     pgn?: string | null;
 }
+
+/** A single message in the AI tutor conversation. */
+export interface ChatMessage {
+    id: number;
+    role: 'user' | 'assistant';
+    content: string;
+}
