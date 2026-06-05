@@ -29,8 +29,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-    LayoutDashboard,
-    MessageSquare,
     Rocket,
     LogOut,
     ChevronsUpDown,
@@ -40,11 +38,6 @@ import {
 
 const navigation = [
     {
-        title: 'Mission Control',
-        url: '/dashboard/mission-control',
-        icon: LayoutDashboard,
-    },
-    {
         title: 'Play Chess',
         url: '/dashboard/chess',
         icon: Crown,
@@ -53,11 +46,6 @@ const navigation = [
         title: 'Game History',
         url: '/dashboard/games',
         icon: History,
-    },
-    {
-        title: 'Chat with Jarvis',
-        url: '/dashboard/chat',
-        icon: MessageSquare,
     },
 ];
 
