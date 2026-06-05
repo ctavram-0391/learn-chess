@@ -30,6 +30,9 @@ export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySetting> = {
  */
 export function useStockfish() {
     const workerRef = useRef<Worker | null>(null);
+    // Serializes engine requests so the single shared worker handles one
+    // `go` at a time (the board's reply and the tutor's "best move" can't interleave).
+    const queueRef = useRef<Promise<unknown>>(Promise.resolve());
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
@@ -73,32 +76,41 @@ export function useStockfish() {
      */
     const getBestMove = useCallback(
         (fen: string, difficulty: Difficulty): Promise<string | null> => {
-            return new Promise((resolve) => {
-                const worker = workerRef.current;
-                if (!worker) {
-                    resolve(null);
-                    return;
-                }
-
-                const { skill, depth } = DIFFICULTY_SETTINGS[difficulty];
-
-                const handler = (event: MessageEvent) => {
-                    const line = typeof event.data === 'string' ? event.data : '';
-                    if (line.startsWith('bestmove')) {
-                        worker.removeEventListener('message', handler);
-                        const best = line.split(' ')[1];
-                        resolve(best && best !== '(none)' ? best : null);
+            const run = () =>
+                new Promise<string | null>((resolve) => {
+                    const worker = workerRef.current;
+                    if (!worker) {
+                        resolve(null);
+                        return;
                     }
-                };
 
-                worker.addEventListener('message', handler);
-                worker.postMessage(`setoption name Skill Level value ${skill}`);
-                worker.postMessage(`position fen ${fen}`);
-                worker.postMessage(`go depth ${depth}`);
-            });
+                    const { skill, depth } = DIFFICULTY_SETTINGS[difficulty];
+
+                    const handler = (event: MessageEvent) => {
+                        const line = typeof event.data === 'string' ? event.data : '';
+                        if (line.startsWith('bestmove')) {
+                            worker.removeEventListener('message', handler);
+                            const best = line.split(' ')[1];
+                            resolve(best && best !== '(none)' ? best : null);
+                        }
+                    };
+
+                    worker.addEventListener('message', handler);
+                    worker.postMessage(`setoption name Skill Level value ${skill}`);
+                    worker.postMessage(`position fen ${fen}`);
+                    worker.postMessage(`go depth ${depth}`);
+                });
+
+            // Chain onto the queue so requests never overlap on the shared worker.
+            const result = queueRef.current.then(run, run);
+            queueRef.current = result.catch(() => undefined);
+            return result;
         },
         [],
     );
 
     return { ready, getBestMove };
 }
+
+/** Shape returned by useStockfish, for passing the shared engine via props. */
+export type StockfishEngine = ReturnType<typeof useStockfish>;
