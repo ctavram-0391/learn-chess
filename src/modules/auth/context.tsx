@@ -7,6 +7,7 @@ import { createSupabaseClient } from '@/lib/supabase/client';
 import { AuthFunctions, AuthState } from './types';
 import AuthService from './service';
 import { authConfig } from './config';
+import { clearSession } from '@/modules/games/lib/session-storage';
 
 interface AuthContextValue extends AuthState, AuthFunctions { }
 
@@ -120,6 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut: async () => {
             const { error } = await AuthService.signOut();
             if (!error) {
+                // Drop any in-progress game/chat so the next person to log in or
+                // sign up starts fresh (the chess page prompts for a new game when
+                // no session is stored).
+                clearSession();
                 router.push(authConfig.loginPath);
             }
             return { error: error as AuthError };
