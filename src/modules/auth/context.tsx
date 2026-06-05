@@ -103,6 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn: async (credentials) => {
             const { user, error } = await AuthService.signIn(credentials);
             if (!error && user) {
+                // Drop any persisted game so every login starts fresh and the
+                // chess page prompts for a new game (difficulty + side).
+                clearSession();
                 // Get returnTo from URL if it exists
                 const params = new URLSearchParams(window.location.search);
                 const returnTo = params.get('returnTo');
@@ -130,6 +133,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return { error: error as AuthError };
         },
         signInWithGoogle: async () => {
+            // Drop any persisted game before the OAuth redirect so the user
+            // returns to a fresh new-game prompt after signing in.
+            clearSession();
             const { data, error } = await AuthService.signInWithGoogle();
             return { data, error: error as AuthError };
         },
