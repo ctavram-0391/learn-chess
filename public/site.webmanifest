@@ -1,0 +1,16 @@
+{
+    "name": "Next Launch TS",
+    "short_name": "Next Launch",
+    "description": "Build something awesome 💪 - The ultimate Next.js starter for modern SaaS applications",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "any",
+            "type": "image/x-icon"
+        }
+    ]
+}

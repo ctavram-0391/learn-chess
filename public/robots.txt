@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Block access to admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /dashboard/
+
+# Allow access to public assets
+Allow: /images/
+Allow: /icons/
+Allow: /*.css
+Allow: /*.js
+
+# Sitemap location (update with your actual domain)
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Crawl delay (optional - adjust based on your server capacity)
+Crawl-delay: 1
